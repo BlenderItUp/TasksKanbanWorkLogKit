@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Plugin, TFile } from "obsidian";
 import OpenKanban from "src/open_kanban/openKanban";
 import {
 	MyPluginSettings,
@@ -13,6 +13,8 @@ export default class MyPlugin extends Plugin {
 	private OpenKanban: OpenKanban;
 	worklogGen: WorklogGen;
 	KanbanStamp: KanbanStamp;
+	private fileModifyHandler: any;
+	private isInternalChange = false;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -42,6 +44,26 @@ export default class MyPlugin extends Plugin {
 				this.KanbanStamp.stamp();
 			},
 		});
+		//sadf
+		this.fileModifyHandler = async (file: TFile) => {
+			if (file.path === "Work/Work.md" && !this.isInternalChange) {
+				this.isInternalChange = true; // Set the flag
+
+				// If this.KanbanStamp.stamp() is asynchronous, you should await it
+				console.log("start");
+				await this.KanbanStamp.stamp();
+				console.log("finish");
+				this.isInternalChange = false; // Reset the flag AFTER the modification is completed
+			}
+		};
+
+		// Add event listener
+		this.app.vault.on("modify", this.fileModifyHandler);
+	}
+
+	onunload() {
+		// Remove event listener
+		this.app.vault.off("modify", this.fileModifyHandler);
 	}
 
 	async loadSettings() {
